@@ -1,6 +1,7 @@
 #include "Battleground.h"
 #include "..\FlowField.h"
 #include <SpriteBatchBuffer.h>
+#include <ds_imgui.h>
 
 const static int START_X = 52;
 const static int START_Y = 62;
@@ -77,6 +78,9 @@ bool convert(int screenX, int screenY, p2i* ret) {
 	return false;
 }
 
+// ---------------------------------------------------------------
+// ctor
+// ---------------------------------------------------------------
 Battleground::Battleground() {
 	_grid = new Grid(20, 14);
 	_startPoint = p2i(0, 0);
@@ -87,14 +91,26 @@ Battleground::Battleground() {
 
 	_flowField = new FlowField(_grid);
 	_flowField->build(_endPoint);
+
+	_pendingWalkers = { 0, 0, 0.0f, 0.0f };
+	_dbgTTL = 0.4f;
 }
 
+// ---------------------------------------------------------------
+// dtor
+// ---------------------------------------------------------------
 Battleground::~Battleground() {
 	delete _flowField;
 	delete _grid;
 }
 
+// ---------------------------------------------------------------
+// render
+// ---------------------------------------------------------------
 void Battleground::render(SpriteBatchBuffer* buffer) {
+	//
+	// draw grid
+	//
 	for (int y = 0; y < _grid->height; ++y) {
 		for (int x = 0; x < _grid->width; ++x) {
 			ds::vec2 p = ds::vec2(START_X + x * 46, START_Y + 46 * y);
@@ -134,8 +150,20 @@ void Battleground::render(SpriteBatchBuffer* buffer) {
 		buffer->add(w.pos, ds::vec4(276, 0, 24, 24), ds::vec2(1, 1), w.rotation);
 		
 	}
+	//
+	// draw bullets
+	//
+	for (size_t i = 0; i < _bullets.size(); ++i) {
+		const Bullet& b = _bullets[i];
+		buffer->add(b.pos, ds::vec4(0, 60, 12, 12));
+	}
+
+	showGUI();
 }
 
+// ---------------------------------------------------------------
+// start walker
+// ---------------------------------------------------------------
 void Battleground::startWalker() {
 	ID id = _walkers.add();
 	Walker& w = _walkers.get(id);
@@ -146,21 +174,172 @@ void Battleground::startWalker() {
 	_walker_ids.push_back(id);
 }
 
+// ---------------------------------------------------------------
+// start walkers
+// ---------------------------------------------------------------
+void Battleground::startWalkers(int type, int count, float ttl) {
+	_pendingWalkers.timer = 0.0f;
+	_pendingWalkers.type = type;
+	_pendingWalkers.count = count;
+	_pendingWalkers.ttl = ttl;
+}
+
+// ---------------------------------------------------------------
+// emitt walker
+// ---------------------------------------------------------------
+void Battleground::emittWalker(float dt) {
+	if (_pendingWalkers.count > 0) {
+		_pendingWalkers.timer += dt;
+		if (_pendingWalkers.timer >= _pendingWalkers.ttl) {
+			--_pendingWalkers.count;
+			startWalker();
+			_pendingWalkers.timer -= _pendingWalkers.ttl;
+		}
+	}
+}
+
+// ---------------------------------------------------------------
+// is close (walker still in reach of tower)
+// ---------------------------------------------------------------
+bool Battleground::isClose(const Tower& tower, const Walker& walker) const {
+	float diff = sqr_length(tower.position - walker.pos);
+	return (diff < tower.radius * tower.radius);
+}
+
+void Battleground::buttonClicked(int index) {
+	if (index == 0) {
+		for (size_t i = 0; i < _towers.size(); ++i) {
+			startBullet(i, 1);
+		}
+	}
+}
+// ---------------------------------------------------------------
+// tick
+// ---------------------------------------------------------------
 void Battleground::tick(float dt) {
+
+	emittWalker(dt);
+
 	moveWalkers(dt);
+
+	rotateTowers();
+	/*
+	for (size_t i = 0; i < _towers.size(); ++i) {
+		Tower& t = _towers[i];
+		ds::vec2 mp = ds::getMousePosition();
+		float diff = sqr_length(t.position - mp);
+		ds::vec2 dd = mp - t.position;
+		t.direction = getAngle(ds::vec2(1, 0), dd);
+	}
+	*/
+	moveBullets(dt);
 
 	for (size_t i = 0; i < _towers.size(); ++i) {
 		Tower& t = _towers[i];
-		for (uint32_t i = 0; i < _walkers.numObjects; ++i) {
-			const Walker& w = _walkers.objects[i];
-			float diff = sqr_length(t.position - w.pos);
-			if (diff < t.radius * t.radius) {
-				t.direction = getAngle(w.pos, t.position);
+		if (t.target != INVALID_ID) {
+			t.timer += dt;
+			if (t.timer >= t.bulletTTL) {
+				startBullet(i,1);
+				t.timer -= t.bulletTTL;
 			}
 		}
 	}
 }
 
+// ---------------------------------------------------------------
+// start bullet
+// ---------------------------------------------------------------
+void Battleground::startBullet(int towerIndex, int energy) {
+	const Tower& t = _towers[towerIndex];
+	Bullet b;
+	b.energy = t.energy;
+	b.pos = t.position;
+	b.timer = 0.0f;
+	b.ttl = 1.0f;
+	const Walker& w = _walkers.get(t.target);
+	ds::vec2 dd = w.pos - t.position;
+	float direction = getAngle(ds::vec2(1, 0), dd);
+	b.velocity = 250.0f * ds::vec2(cos(direction), sin(direction));
+	_bullets.push_back(b);
+}
+
+// ---------------------------------------------------------------
+// check walker collision
+// ---------------------------------------------------------------
+bool Battleground::checkWalkerCollision(const ds::vec2& pos, float radius) {
+	for (uint32_t i = 0; i < _walkers.numObjects; ++i) {
+		const Walker& w = _walkers.objects[i];
+		float diff = sqr_length(pos - w.pos);
+		if (diff < radius * radius) {
+			_walkers.remove(w.id);
+			return true;
+		}
+	}
+	return false;
+}
+
+// ---------------------------------------------------------------
+// move bullets
+// ---------------------------------------------------------------
+void Battleground::moveBullets(float dt) {
+	std::vector<Bullet>::iterator it = _bullets.begin();
+	while (it != _bullets.end()) {
+		it->pos += it->velocity * dt;
+		if (checkWalkerCollision(it->pos, 10.0f)) {
+			it = _bullets.erase(it);
+		}
+		else if (it->pos.x < 0.0f || it->pos.x > 1020.0f || it->pos.y < 0.0f || it->pos.y > 760.0f) {
+			it = _bullets.erase(it);
+		}
+		else {
+			++it;
+		}
+	}
+	
+}
+
+// ---------------------------------------------------------------
+// rotate towers
+// ---------------------------------------------------------------
+void Battleground::rotateTowers() {
+	for (size_t i = 0; i < _towers.size(); ++i) {
+		Tower& t = _towers[i];
+		if (t.target != INVALID_ID) {
+			if (_walkers.contains(t.target)) {
+				const Walker& w = _walkers.get(t.target);
+				if (!isClose(t, w)) {
+					t.target = INVALID_ID;
+					t.timer = 0.0f;
+				}
+				else {
+					ds::vec2 dd = w.pos - t.position;
+					t.direction = getAngle(ds::vec2(1, 0), dd);
+				}
+			}
+			else {
+				t.target = INVALID_ID;
+				//t.timer = t.bulletTTL;
+			}
+		}
+		if (t.target == INVALID_ID) {
+			for (uint32_t i = 0; i < _walkers.numObjects; ++i) {
+				const Walker& w = _walkers.objects[i];
+				float diff = sqr_length(t.position - w.pos);
+				if (diff < t.radius * t.radius) {
+					t.timer = t.bulletTTL;
+					ds::vec2 dd = w.pos - t.position;
+					t.direction = getAngle(ds::vec2(1, 0),normalize(dd));
+					t.target = w.id;
+
+				}
+			}
+		}
+	}
+}
+
+// ---------------------------------------------------------------
+// move walkers
+// ---------------------------------------------------------------
 void Battleground::moveWalkers(float dt) {
 	for (uint32_t i = 0; i < _walkers.numObjects; ++i) {
 		Walker& w = _walkers.objects[i];
@@ -175,40 +354,15 @@ void Battleground::moveWalkers(float dt) {
 			w.pos += v * dt;
 			w.rotation = getAngle(w.pos, ds::vec2(nextPos.x, nextPos.y));
 		}
-	}
-}
-
-
-
-// ---------------------------------------------------------------
-// prepare walker
-// ---------------------------------------------------------------
-void prepareWalker(Walker* walker, const p2i& start) {
-	walker->gridPos = start;
-	walker->pos = ds::vec2(START_X + start.x * 46, START_Y + start.y * 46);
-	walker->rotation = 0.0f;
-	walker->velocity = ds::vec2(0.0f);
-}
-
-// ---------------------------------------------------------------
-// move walker
-// ---------------------------------------------------------------
-bool moveWalker(FlowField* flowField, Walker* walker) {
-	if (flowField->hasNext(walker->gridPos)) {
-		p2i n = flowField->next(walker->gridPos);
-		p2i nextPos = p2i(START_X + n.x * 46, START_Y + n.y * 46);
-		ds::vec2 diff = walker->pos - ds::vec2(nextPos.x, nextPos.y);
-		if (sqr_length(diff) < 4.0f) {
-			convert(walker->pos.x, walker->pos.y, START_X, START_Y, &walker->gridPos);
+		else {
+			_walkers.remove(w.id);
 		}
-		ds::vec2 v = normalize(ds::vec2(nextPos.x, nextPos.y) - walker->pos) * 100.0f;
-		walker->pos += v * static_cast<float>(ds::getElapsedSeconds());
-		walker->rotation = getAngle(walker->pos, ds::vec2(nextPos.x, nextPos.y));
-		return true;
 	}
-	return false;
 }
 
+// ---------------------------------------------------------------
+// add tower
+// ---------------------------------------------------------------
 void Battleground::addTower(ds::vec2& screenPos) {
 	p2i gridPos;
 	if (convert(screenPos.x, screenPos.y, &gridPos)) {
@@ -224,8 +378,24 @@ void Battleground::addTower(ds::vec2& screenPos) {
 		t.timer = 0.0f;
 		t.bulletTTL = 1.0f;
 		t.direction = 0.0f;
+		t.target = INVALID_ID;
 		_towers.push_back(t);
 	}
+}
+
+// ---------------------------------------------------------------
+// show GUI
+// ---------------------------------------------------------------
+void Battleground::showGUI() {
+	p2i dp(10, 758);
+	int state = 1;
+	gui::start(&dp, 300);
+	gui::begin("Walkers", 0);
+	gui::Input("TTL", &_dbgTTL);
+	if (gui::Button("Start")) {
+		startWalkers(0, 8, _dbgTTL);
+	}
+	gui::end();
 }
 
 // ---------------------------------------------------------------
@@ -263,22 +433,3 @@ void drawNumber(SpriteBatchBuffer* buffer, int value, ds::vec2 p) {
 		buffer->add(p, st);
 	}
 }
-
-
-/*
-void rotateTowers(Towers& towers, Walkers& walkers) {
-	for (size_t i = 0; i < towers.size(); ++i) {
-		Tower& t = towers[i];
-		for (size_t j = 0; j < walkers.size(); ++j) {
-			const Walker& w = walkers[j];
-			float diff = sqr_length(t.position - w.pos);
-
-			if (diff < t.radius * t.radius) {
-				t.direction = getAngle(w.pos, t.position);
-				float d = t.direction * ds::TWO_PI / 360.0f;
-				ds::log(LL_DEBUG, "dir %g", d);
-			}
-		}
-	}
-}
-*/

@@ -1,18 +1,8 @@
 #pragma once
-
-struct p2i {
-
-	int x;
-	int y;
-	
-	p2i() : x(0), y(0) {}
-	p2i(int xp, int yp) : x(xp), y(yp) {}
-	
-};
+#include <ds_imgui.h>
 
 inline bool operator ==(const p2i& first, const p2i& other) {
 	return first.x == other.x && first.y == other.y;
-	
 }
 
 inline bool operator !=(const p2i& first, const p2i& other) {

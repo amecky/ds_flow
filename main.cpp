@@ -4,6 +4,8 @@
 #include "stb_image.h"
 #define SPRITE_IMPLEMENTATION
 #include <SpriteBatchBuffer.h>
+#define DS_IMGUI_IMPLEMENTATION
+#include <ds_imgui.h>
 #include "src\Battleground.h"
 #include <stdio.h>
 #include <Windows.h>
@@ -57,7 +59,6 @@ void handleButton(int index, ButtonState* state) {
 // main method
 // ---------------------------------------------------------------
 int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline, int iCmdshow) {
-//int main(int argc, char *argv[]) {
 	//
 	// prepare application
 	//
@@ -76,8 +77,6 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 
 	SpriteBatchBufferInfo sbbInfo = { 2048,textureID };
 	SpriteBatchBuffer spriteBuffer(sbbInfo);
-	
-	int state = 1;
 
 	ButtonState leftButton = { false, false };
 	ButtonState rightButton = { false, false };
@@ -85,10 +84,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 	Battleground battleGround;
 	battleGround.startWalker();
 
-	int gx = 0;
-	int gy = 0;
-
-	float step = ds::PI * 0.25f;
+	gui::init();
 
 	//p2i current(0, 0);
 
@@ -101,45 +97,15 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 		//
 		// start a new walker
 		//
-		/*
 		if (leftButton.clicked) {
-			ds::vec2 mp = ds::getMousePosition();
-			if (mp.x >= (START_X - 23) && mp.y >= (START_Y - 23)) {
-				gx = (mp.x - START_X + 23) / 46;
-				gy = (mp.y - START_Y + 23) / 46;
-				Walker walker;
-				prepareWalker(&walker, p2i(gx, gy));
-				walkers.push_back(walker);
-			}
-			else {
-				gx = -1;
-				gy = -1;
-			}
+			//battleGround.buttonClicked(0);
 			leftButton.clicked = false;
 		}
-		*/
 		if (rightButton.clicked) {
 			ds::vec2 mp = ds::getMousePosition();
 			battleGround.addTower(mp);
 			rightButton.clicked = false;
 		}
-		
-		/*
-		//
-		// move all walkers
-		//
-		Walkers::iterator it = walkers.begin();
-		while (it != walkers.end()) {
-			if (moveWalker(&flowField, &(*it))) {
-				++it;
-			}
-			else {
-				it = walkers.erase(it);
-			}
-		}
-
-		rotateTowers(towers, walkers);
-		*/
 		
 		battleGround.tick(ds::getElapsedSeconds());
 

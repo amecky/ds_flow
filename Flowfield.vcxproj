@@ -74,7 +74,7 @@
     <LibraryPath>$(LibraryPath);$(DXSDK_DIR)Lib\x86</LibraryPath>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <IncludePath>$(IncludePath);$(DXSDK_DIR)Include;..\diesel;..\ds_sprite_buffer</IncludePath>
+    <IncludePath>$(IncludePath);$(DXSDK_DIR)Include;ext</IncludePath>
     <ReferencePath>$(DXSDK_DIR)Lib\x86;$(ReferencePath)</ReferencePath>
     <LibraryPath>$(LibraryPath);$(DXSDK_DIR)Lib\x86</LibraryPath>
   </PropertyGroup>

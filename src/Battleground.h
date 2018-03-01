@@ -7,12 +7,28 @@
 class FlowField;
 class SpriteBatchBuffer;
 
+struct PendingWalkers {	
+	int type;
+	int count;
+	float timer;
+	float ttl;
+};
+
 struct Walker {
 	ID id;
 	p2i gridPos;
 	ds::vec2 velocity;
 	ds::vec2 pos;
 	float rotation;
+};
+
+struct Bullet {
+	ds::vec2 pos;
+	float radius;
+	ds::vec2 velocity;
+	float timer;
+	float ttl;
+	int energy;
 };
 
 struct Tower {
@@ -25,6 +41,7 @@ struct Tower {
 	float timer;
 	float bulletTTL;
 	float direction;
+	ID target;
 };
 
 typedef std::vector<Tower> Towers;
@@ -36,15 +53,28 @@ public:
 	~Battleground();
 	void render(SpriteBatchBuffer* buffer);
 	void startWalker();
+	void startWalkers(int type, int count, float ttl);
 	void addTower(ds::vec2& screenPos);
 	void tick(float dt);
+	void buttonClicked(int index);
 private:
+	void showGUI();
+	void emittWalker(float dt);
 	void moveWalkers(float dt);
+	bool isClose(const Tower& tower, const Walker& walker) const;
+	void rotateTowers();
+	void startBullet(int towerIndex, int energy);
+	void moveBullets(float dt);
+	bool checkWalkerCollision(const ds::vec2& pos, float radius);
 	ds::DataArray<Walker> _walkers;
 	std::vector<ID> _walker_ids;
+	std::vector<Bullet> _bullets;
 	Grid* _grid;
 	FlowField* _flowField;
 	p2i _startPoint;
 	p2i _endPoint;
 	Towers _towers;
+	PendingWalkers _pendingWalkers;
+	// debug
+	float _dbgTTL;
 };
