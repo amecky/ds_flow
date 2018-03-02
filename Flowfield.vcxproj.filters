@@ -14,10 +14,37 @@
       <Filter>lib</Filter>
     </ClInclude>
     <ClInclude Include="src\Battleground.h" />
+    <ClInclude Include="ext\ds_game_ui.h">
+      <Filter>ext</Filter>
+    </ClInclude>
+    <ClInclude Include="ext\ds_imgui.h">
+      <Filter>ext</Filter>
+    </ClInclude>
+    <ClInclude Include="ext\ds_stretchbuffer.h">
+      <Filter>ext</Filter>
+    </ClInclude>
+    <ClInclude Include="ext\ds_tweakable.h">
+      <Filter>ext</Filter>
+    </ClInclude>
+    <ClInclude Include="ext\ds_tweening.h">
+      <Filter>ext</Filter>
+    </ClInclude>
+    <ClInclude Include="ext\SpriteBatchBuffer.h">
+      <Filter>ext</Filter>
+    </ClInclude>
+    <ClInclude Include="ext\stb_image.h">
+      <Filter>ext</Filter>
+    </ClInclude>
+    <ClInclude Include="ext\diesel.h">
+      <Filter>ext</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="lib">
       <UniqueIdentifier>{ddc0c623-a149-473b-9147-3aa10c234693}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="ext">
+      <UniqueIdentifier>{72d2791a-639c-4c2c-8e6c-cf2018bd3343}</UniqueIdentifier>
     </Filter>
   </ItemGroup>
 </Project>

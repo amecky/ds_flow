@@ -115,6 +115,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 
 		spriteBuffer.flush();
 
+		battleGround.showGUI();
+
 		ds::end();
 	}
 	ds::shutdown();

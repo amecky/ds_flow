@@ -86,15 +86,7 @@ namespace gui {
 
 	void start(p2i* position, int width);
 
-	//void begin(const char* header, int width = 200);
-
-	//void begin(const p2i& pos);
-
-	//bool begin(const char* header, int* state, int width = 200);
-
 	bool begin(const char* header, int* state);
-
-	//bool begin(const char* header, int* state, p2i* position, int width = 200);
 
 	void beginGroup();
 

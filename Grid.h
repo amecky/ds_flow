@@ -86,6 +86,14 @@ struct Grid {
 			items[idx] = v;
 		}
 	}
+
+	int get(p2i p) const {
+		return items[p.x + p.y * width];
+	}
+
+	int get(int x, int y) const {
+		return items[x + y * width];
+	}
 	
 	bool isValid(int x, int y) const {
 		if (x < 0 || y < 0 || x >= width || y >= height) {

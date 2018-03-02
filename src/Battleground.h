@@ -57,8 +57,8 @@ public:
 	void addTower(ds::vec2& screenPos);
 	void tick(float dt);
 	void buttonClicked(int index);
-private:
 	void showGUI();
+private:	
 	void emittWalker(float dt);
 	void moveWalkers(float dt);
 	bool isClose(const Tower& tower, const Walker& walker) const;
@@ -66,8 +66,8 @@ private:
 	void startBullet(int towerIndex, int energy);
 	void moveBullets(float dt);
 	bool checkWalkerCollision(const ds::vec2& pos, float radius);
+	void fireBullets(float dt);
 	ds::DataArray<Walker> _walkers;
-	std::vector<ID> _walker_ids;
 	std::vector<Bullet> _bullets;
 	Grid* _grid;
 	FlowField* _flowField;
@@ -77,4 +77,5 @@ private:
 	PendingWalkers _pendingWalkers;
 	// debug
 	float _dbgTTL;
+	bool _dbgShowOverlay;
 };
