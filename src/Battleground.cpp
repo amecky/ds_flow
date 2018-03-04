@@ -3,52 +3,6 @@
 #include <SpriteBatchBuffer.h>
 #include <ds_imgui.h>
 
-const static int START_X = 52;
-const static int START_Y = 62;
-
-void readGridData(Grid* grid, p2i* start, p2i* end) {
-	FILE* fp = fopen("field.txt", "r");
-	char* data = 0;
-	int fileSize = -1;
-	if (fp) {
-		fseek(fp, 0, SEEK_END);
-		fileSize = ftell(fp);
-		fseek(fp, 0, SEEK_SET);
-		data = new char[fileSize + 1];
-		fread(data, 1, fileSize, fp);
-		data[fileSize] = '\0';
-		fclose(fp);
-	}
-	if (data != 0) {
-		int idx = 0;
-		for (int y = 13; y >= 0; --y) {
-			for (int x = 0; x < 20; ++x) {
-				if (data[idx] == 'x') {
-					grid->set(x, y, 1);
-				}
-				else if (data[idx] == '=') {
-					grid->set(x, y, 4);
-				}
-				else if (data[idx] == 's') {
-					*start = p2i(x, y);
-				}
-				else if (data[idx] == 'e') {
-					*end = p2i(x, y);
-				}
-				else if (data[idx] == '.') {
-					grid->set(x, y, 0);
-				}
-				else  {
-					ds::log(LL_DEBUG, "FOUND '%c'",data[idx]);
-				}
-				++idx;
-			}
-			++idx;
-		}
-	}
-	delete[] data;
-}
-
 ds::vec2 convert_to_screen(int gx, int gy) {
 	return{ START_X + gx * 46, START_Y + gy * 46 };
 }
@@ -64,36 +18,15 @@ float getAngle(const ds::vec2& u, const ds::vec2& v) {
 }
 
 // ---------------------------------------------------------------
-// convert screen coordinates to grid position if possible
-// ---------------------------------------------------------------
-bool convert(int screenX, int screenY, int startX, int startY, p2i* ret) {
-	if (screenX >= (startX - 23) && screenY >= (startY - 23)) {
-		ret->x = (screenX - startX + 23) / 46;
-		ret->y = (screenY - startY + 23) / 46;
-		return true;
-	}
-	return false;
-}
-
-bool convert(int screenX, int screenY, p2i* ret) {
-	if (screenX >= (START_X - 23) && screenY >= (START_Y - 23)) {
-		ret->x = (screenX - START_X + 23) / 46;
-		ret->y = (screenY - START_Y + 23) / 46;
-		return true;
-	}
-	return false;
-}
-
-// ---------------------------------------------------------------
 // ctor
 // ---------------------------------------------------------------
 Battleground::Battleground() {
-	_grid = new Grid(20, 14);
+	_grid = new Grid(GRID_SIZE_X, GRID_SIZE_Y);
 	_startPoint = p2i(0, 0);
 	_endPoint = p2i(0, 0);
-	readGridData(_grid, &_startPoint, &_endPoint);
-	_grid->setStart(_startPoint.x, _startPoint.y);
-	_grid->setEnd(_endPoint.x, _endPoint.y);
+	_grid->load("TestLevel");
+	_startPoint = _grid->getStart();
+	_endPoint = _grid->getEnd();
 
 	_flowField = new FlowField(_grid);
 	_flowField->build(_endPoint);
@@ -121,33 +54,15 @@ void Battleground::render(SpriteBatchBuffer* buffer) {
 	for (int y = 0; y < _grid->height; ++y) {
 		for (int x = 0; x < _grid->width; ++x) {
 			ds::vec2 p = ds::vec2(START_X + x * 46, START_Y + 46 * y);
-			ds::vec4 t = ds::vec4(0, 0, 46, 46);
 			int type = _grid->items[x + y * _grid->width];
-			if (type == 0) {
-				t = ds::vec4(46, 0, 46, 46);
-			}
-			else if (type == 1) {
-				t = ds::vec4(46, 0, 46, 46);
-			}
-			else if (type == 2) {
-				t = ds::vec4(138, 0, 46, 46);
-			}
-			else if (type == 3) {
-				t = ds::vec4(184, 0, 46, 46);
-			}
-			else if (type == 4) {
-				t = ds::vec4(0, 0, 46, 46);
-			}
-			//else if (type == 0) {
-				buffer->add(p, t);
-				if (_dbgShowOverlay) {
-					// draw direction
-					int d = _flowField->get(x, y);
-					if (d >= 0 && d < 9) {
-						buffer->add(p, ds::vec4(d * 46, 138, 46, 46));
-					}
+			buffer->add(p, GRID_TEXTURES[type]);
+			if (_dbgShowOverlay) {
+				// draw direction
+				int d = _flowField->get(x, y);
+				if (d >= 0 && d < 9) {
+					buffer->add(p, ds::vec4(d * 46, 138, 46, 46));
 				}
-			//}
+			}
 		}
 	}
 	//
@@ -155,6 +70,7 @@ void Battleground::render(SpriteBatchBuffer* buffer) {
 	//
 	for (size_t i = 0; i < _towers.size(); ++i) {
 		const Tower& t = _towers[i];
+		buffer->add(t.position, ds::vec4(138 + t.level * 46, 46, 46, 46));
 		buffer->add(t.position, ds::vec4(46, 92, 46, 46), ds::vec2(1.0f), t.direction);
 	}
 	//
@@ -398,6 +314,7 @@ void Battleground::addTower(ds::vec2& screenPos) {
 			t.bulletTTL = 2.0f;
 			t.direction = 0.0f;
 			t.target = INVALID_ID;
+			t.level = 1;
 			_towers.push_back(t);
 		}
 	}
@@ -407,9 +324,9 @@ void Battleground::addTower(ds::vec2& screenPos) {
 // show GUI
 // ---------------------------------------------------------------
 void Battleground::showGUI() {
-	p2i dp(10, 758);
+	p2i dp(10, 710);
 	int state = 1;
-	
+	gui::setAlphaLevel(0.3f);
 	gui::start(&dp, 300);
 	gui::begin("Walkers", 0);
 	gui::Checkbox("Show overlay", &_dbgShowOverlay);

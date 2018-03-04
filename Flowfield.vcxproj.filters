@@ -5,11 +5,11 @@
     <ClCompile Include="APath.cpp" />
     <ClCompile Include="FlowField.cpp" />
     <ClCompile Include="src\Battleground.cpp" />
+    <ClCompile Include="src\Editor.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="APath.h" />
     <ClInclude Include="FlowField.h" />
-    <ClInclude Include="Grid.h" />
     <ClInclude Include="src\lib\DataArray.h">
       <Filter>lib</Filter>
     </ClInclude>
@@ -38,6 +38,8 @@
     <ClInclude Include="ext\diesel.h">
       <Filter>ext</Filter>
     </ClInclude>
+    <ClInclude Include="src\Editor.h" />
+    <ClInclude Include="src\Grid.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="lib">

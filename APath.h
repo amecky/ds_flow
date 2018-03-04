@@ -1,5 +1,5 @@
 #pragma once
-#include "Grid.h"
+#include "src\Grid.h"
 
 struct WayPoint {
 	p2i p;

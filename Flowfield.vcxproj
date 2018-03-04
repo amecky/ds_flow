@@ -133,6 +133,7 @@
     <ClCompile Include="FlowField.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="src\Battleground.cpp" />
+    <ClCompile Include="src\Editor.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="APath.h" />
@@ -145,8 +146,9 @@
     <ClInclude Include="ext\SpriteBatchBuffer.h" />
     <ClInclude Include="ext\stb_image.h" />
     <ClInclude Include="FlowField.h" />
-    <ClInclude Include="Grid.h" />
     <ClInclude Include="src\Battleground.h" />
+    <ClInclude Include="src\Editor.h" />
+    <ClInclude Include="src\Grid.h" />
     <ClInclude Include="src\lib\DataArray.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

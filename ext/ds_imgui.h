@@ -210,6 +210,8 @@ namespace gui {
 
 	void draw_box(const p2i& position, const p2i& dimension, const ds::Color& color);
 
+	void setAlphaLevel(float alpha);
+
 	const IMGUISettings& getSettings();
 	
 	void debug();
@@ -492,6 +494,7 @@ namespace gui {
 			p2i size;
 			char tmpBuffer[256];
 			UIBatchBuffer sprites;
+			float alpha;
 		};
 
 		static void createBatchBuffer(UIContext* ctx, int max, RID textureID, ds::TextureFilters textureFilter) {
@@ -585,6 +588,7 @@ namespace gui {
 			createBuffer(ctx->buffer, 4096);
 			ctx->overlay_buffer = new UIBuffer();
 			ctx->use_overlay = false;
+			ctx->alpha = 1.0f;
 			createBuffer(ctx->overlay_buffer, 4096);			
 			uint8_t* data = new uint8_t[256 * 256 * 4];
 			for (int i = 0; i < 256 * 256 * 4; ++i) {
@@ -776,7 +780,9 @@ namespace gui {
 				sz.y = WHITE_RECT.height;
 				scale.y = static_cast<float>(size.y) / static_cast<float>(WHITE_RECT.height);
 			}
-			add_to_buffer(ctx, pos, recti(256, 0, sz.x, sz.y), scale, color, resize);
+			ds::Color tmpColor = color;
+			tmpColor.a = ctx->alpha;
+			add_to_buffer(ctx, pos, recti(256, 0, sz.x, sz.y), scale, tmpColor, resize);
 			if (size.x > ctx->size.x) {
 				ctx->size.x = size.x;
 			}
@@ -990,6 +996,10 @@ namespace gui {
 	};
 
 	static GUIContext* _guiCtx = 0;
+
+	void setAlphaLevel(float alpha) {
+		_guiCtx->uiContext->alpha = alpha;
+	}
 
 	// -------------------------------------------------------
 	// methods for state checking
@@ -1704,9 +1714,10 @@ namespace gui {
 	// -------------------------------------------------------
 	bool TextBox(const char* label, char* str, int maxLength) {
 		pushID(label);
-		bool ret = InputScalar(0, str, maxLength, 500);
+		int width = maxLength * 10;
+		bool ret = InputScalar(0, str, maxLength, width);
 		p2i p = _guiCtx->currentPos;
-		p.x += 560;
+		p.x += width + 10;
 		p2i ts = renderer::add_text(_guiCtx->uiContext, p, label);
 		moveForward(p2i(150 + ts.x + 10, 22));
 		popID();

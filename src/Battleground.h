@@ -1,7 +1,7 @@
 #pragma once
 #include <diesel.h>
 #include <vector>
-#include "..\Grid.h"
+#include "Grid.h"
 #include "lib\DataArray.h"
 
 class FlowField;
@@ -42,6 +42,7 @@ struct Tower {
 	float bulletTTL;
 	float direction;
 	ID target;
+	int level;
 };
 
 typedef std::vector<Tower> Towers;

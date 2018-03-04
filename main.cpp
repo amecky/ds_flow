@@ -7,6 +7,7 @@
 #define DS_IMGUI_IMPLEMENTATION
 #include <ds_imgui.h>
 #include "src\Battleground.h"
+#include "src\Editor.h"
 #include <stdio.h>
 #include <Windows.h>
 
@@ -63,8 +64,8 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 	// prepare application
 	//
 	ds::RenderSettings rs;
-	rs.width = 1024;
-	rs.height = 768;
+	rs.width = 1280;
+	rs.height = 720;
 	rs.title = "Flowfield sandbox";
 	rs.clearColor = ds::Color(0.1f, 0.1f, 0.1f, 1.0f);
 	rs.multisampling = 4;
@@ -81,12 +82,17 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 	ButtonState leftButton = { false, false };
 	ButtonState rightButton = { false, false };
 
+	//
+	// GAME STATE
+	//
+	int state = 0;
+
 	Battleground battleGround;
 	battleGround.startWalker();
 
-	gui::init();
+	Editor editor;
 
-	//p2i current(0, 0);
+	gui::init();
 
 	while (ds::isRunning()) {
 
@@ -98,25 +104,45 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 		// start a new walker
 		//
 		if (leftButton.clicked) {
-			//battleGround.buttonClicked(0);
+			if (state == 0) {
+				//battleGround.buttonClicked(0);
+			}
+			if (state == 1) {
+				editor.buttonClicked(0);
+			}
 			leftButton.clicked = false;
 		}
 		if (rightButton.clicked) {
 			ds::vec2 mp = ds::getMousePosition();
-			battleGround.addTower(mp);
+			if (state == 0) {
+				battleGround.addTower(mp);
+			}
+			if (state == 1) {
+				editor.buttonClicked(1);
+			}
 			rightButton.clicked = false;
 		}
-		
-		battleGround.tick(ds::getElapsedSeconds());
+		if (state == 0) {
+			battleGround.tick(ds::getElapsedSeconds());
+		}
+		if (state == 1) {
+			editor.tick(ds::getElapsedSeconds());
+		}
 
 		spriteBuffer.begin();
-
-		battleGround.render(&spriteBuffer);
-
+		if (state == 0) {
+			battleGround.render(&spriteBuffer);
+		}
+		else if (state == 1) {
+			editor.render(&spriteBuffer);
+		}
 		spriteBuffer.flush();
-
-		battleGround.showGUI();
-
+		if (state == 0) {
+			battleGround.showGUI();
+		}
+		if (state == 1) {
+			editor.showGUI();
+		}
 		ds::end();
 	}
 	ds::shutdown();
