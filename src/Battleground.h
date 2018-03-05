@@ -7,8 +7,16 @@
 class FlowField;
 class SpriteBatchBuffer;
 
+struct WalkerType {
+
+	enum Enum {
+		SIMPLE_CELL,
+		FAST_CELL
+	};
+};
+
 struct PendingWalkers {	
-	int type;
+	WalkerType::Enum type;
 	int count;
 	float timer;
 	float ttl;
@@ -20,6 +28,7 @@ struct Walker {
 	ds::vec2 velocity;
 	ds::vec2 pos;
 	float rotation;
+	WalkerType::Enum type;
 };
 
 struct Bullet {
@@ -45,6 +54,13 @@ struct Tower {
 	int level;
 };
 
+struct Level {
+	const char* name;
+	WalkerType::Enum types[32];
+	int count[32];
+	int numWaves;
+};
+
 typedef std::vector<Tower> Towers;
 
 class Battleground {
@@ -54,7 +70,7 @@ public:
 	~Battleground();
 	void render(SpriteBatchBuffer* buffer);
 	void startWalker();
-	void startWalkers(int type, int count, float ttl);
+	void startWalkers(WalkerType::Enum type, int count, float ttl);
 	void addTower(ds::vec2& screenPos);
 	void tick(float dt);
 	void buttonClicked(int index);

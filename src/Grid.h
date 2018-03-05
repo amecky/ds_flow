@@ -46,15 +46,15 @@ inline bool convert(int screenX, int screenY, p2i* ret) {
 }
 
 const static ds::vec4 GRID_TEXTURES[] = {
-	ds::vec4(46,   0, 46, 46),
-	ds::vec4(0,   0, 46, 46),
+	ds::vec4( 46,   0, 46, 46),
+	ds::vec4(  0,   0, 46, 46),
 	ds::vec4(138,   0, 46, 46),
 	ds::vec4(184,   0, 46, 46),
-	ds::vec4(0,   0, 46, 46),
-	ds::vec4(46,   0, 46, 46),
-	ds::vec4(0, 184, 46, 46),
-	ds::vec4(46, 184, 46, 46),
-	ds::vec4(92, 184, 46, 46),
+	ds::vec4(  0,   0, 46, 46),
+	ds::vec4( 46,   0, 46, 46),
+	ds::vec4(  0, 184, 46, 46),
+	ds::vec4( 46, 184, 46, 46),
+	ds::vec4( 92, 184, 46, 46),
 	ds::vec4(138, 184, 46, 46),
 	ds::vec4(184, 184, 46, 46),
 	ds::vec4(230, 184, 46, 46),
@@ -62,7 +62,9 @@ const static ds::vec4 GRID_TEXTURES[] = {
 	ds::vec4(322, 184, 46, 46),
 	ds::vec4(368, 184, 46, 46),
 	ds::vec4(414, 184, 46, 46),
-	ds::vec4(460, 184, 46, 46)
+	ds::vec4(460, 184, 46, 46),
+	ds::vec4(  0, 230, 46, 46),
+	ds::vec4( 46, 230, 46, 46)
 };
 
 
@@ -95,6 +97,14 @@ struct Grid {
 			
 		}
 		
+	}
+
+	void clear(int v) {
+		for (int y = 0; y < height; ++y) {
+			for (int x = 0; x < width; ++x) {
+				set(x, y, v);
+			}
+		}
 	}
 	
 	void setStart(int x, int y) {

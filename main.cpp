@@ -85,7 +85,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 	//
 	// GAME STATE
 	//
-	int state = 0;
+	int state = 1;
 
 	Battleground battleGround;
 	battleGround.startWalker();
@@ -100,9 +100,7 @@ int WINAPI WinMain(HINSTANCE hInstance, HINSTANCE hPrevInstance, PSTR pScmdline,
 		handleButton(1, &rightButton);
 
 		ds::begin();
-		//
-		// start a new walker
-		//
+
 		if (leftButton.clicked) {
 			if (state == 0) {
 				//battleGround.buttonClicked(0);

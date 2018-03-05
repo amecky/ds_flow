@@ -67,12 +67,15 @@ void Editor::showGUI() {
 	gui::Value("Mouse", mp);
 	gui::Value("Pos", _gridPos);
 	gui::TextBox("Name", _name, 16);
-	gui::StepInput("Type", &_selectedType, 0, 20, 1);
+	gui::StepInput("Type", &_selectedType, 0, 19, 1);
 	if (gui::Button("Load")) {
 		_grid->load(_name);
 	}
 	if (gui::Button("Save")) {
 		_grid->save(_name);		
+	}
+	if (gui::Button("Clear")) {
+		_grid->clear(0);
 	}
 	gui::end();
 }

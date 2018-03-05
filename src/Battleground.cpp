@@ -31,7 +31,7 @@ Battleground::Battleground() {
 	_flowField = new FlowField(_grid);
 	_flowField->build(_endPoint);
 
-	_pendingWalkers = { 0, 0, 0.0f, 0.0f };
+	_pendingWalkers = { WalkerType::SIMPLE_CELL, 0, 0.0f, 0.0f };
 	_dbgTTL = 0.4f;
 	_dbgShowOverlay = true;
 }
@@ -105,7 +105,7 @@ void Battleground::startWalker() {
 // ---------------------------------------------------------------
 // start walkers
 // ---------------------------------------------------------------
-void Battleground::startWalkers(int type, int count, float ttl) {
+void Battleground::startWalkers(WalkerType::Enum type, int count, float ttl) {
 	_pendingWalkers.timer = 0.0f;
 	_pendingWalkers.type = type;
 	_pendingWalkers.count = count;
@@ -332,7 +332,7 @@ void Battleground::showGUI() {
 	gui::Checkbox("Show overlay", &_dbgShowOverlay);
 	gui::Input("TTL", &_dbgTTL);
 	if (gui::Button("Start")) {
-		startWalkers(0, 8, _dbgTTL);
+		startWalkers(WalkerType::SIMPLE_CELL , 8, _dbgTTL);
 	}
 	gui::end();
 }
