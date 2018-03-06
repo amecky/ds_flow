@@ -1,6 +1,7 @@
 #pragma once
 #include <diesel.h>
 #include <vector>
+#include <ds_sprite_app.h>
 #include "Grid.h"
 #include "lib\DataArray.h"
 
@@ -63,7 +64,7 @@ struct Level {
 
 typedef std::vector<Tower> Towers;
 
-class Battleground {
+class Battleground : public ds::Scene {
 
 public:
 	Battleground();
@@ -72,7 +73,7 @@ public:
 	void startWalker();
 	void startWalkers(WalkerType::Enum type, int count, float ttl);
 	void addTower(ds::vec2& screenPos);
-	void tick(float dt);
+	void update(float dt);
 	void buttonClicked(int index);
 	void showGUI();
 private:	

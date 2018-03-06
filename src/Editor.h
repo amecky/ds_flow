@@ -1,9 +1,10 @@
 #pragma once
 #include "Grid.h"
+#include <ds_sprite_app.h>
 
 class SpriteBatchBuffer;
 
-class Editor {
+class Editor : public ds::Scene {
 
 public:
 	Editor();
@@ -11,7 +12,7 @@ public:
 	void render(SpriteBatchBuffer* buffer);
 	void buttonClicked(int index);
 	void showGUI();
-	void tick(float dt);
+	void update(float dt);
 private:
 	p2i _gridPos;
 	Grid* _grid;

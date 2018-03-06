@@ -1,7 +1,7 @@
 #include "Editor.h"
 #include <SpriteBatchBuffer.h>
 
-Editor::Editor() {
+Editor::Editor() : ds::Scene() {
 	_grid = new Grid(GRID_SIZE_X, GRID_SIZE_Y);
 	_startPoint = p2i(1, 1);
 	_endPoint = p2i(18, 12);
@@ -43,7 +43,7 @@ void Editor::render(SpriteBatchBuffer* buffer) {
 	buffer->add(ds::vec2(640,650), GRID_TEXTURES[_selectedType]);
 }
 
-void Editor::tick(float dt) {
+void Editor::update(float dt) {
 	ds::vec2 mp = ds::getMousePosition();
 	p2i gridPos;
 	if (convert(mp.x, mp.y, &gridPos)) {

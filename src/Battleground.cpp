@@ -20,7 +20,7 @@ float getAngle(const ds::vec2& u, const ds::vec2& v) {
 // ---------------------------------------------------------------
 // ctor
 // ---------------------------------------------------------------
-Battleground::Battleground() {
+Battleground::Battleground() : ds::Scene() {
 	_grid = new Grid(GRID_SIZE_X, GRID_SIZE_Y);
 	_startPoint = p2i(0, 0);
 	_endPoint = p2i(0, 0);
@@ -148,7 +148,7 @@ void Battleground::buttonClicked(int index) {
 // ---------------------------------------------------------------
 // tick
 // ---------------------------------------------------------------
-void Battleground::tick(float dt) {
+void Battleground::update(float dt) {
 
 	emittWalker(dt);
 
