@@ -45,6 +45,7 @@
       <Filter>ext</Filter>
     </ClInclude>
     <ClInclude Include="src\FlowApplication.h" />
+    <ClInclude Include="src\EventTypes.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="lib">

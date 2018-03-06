@@ -2,6 +2,7 @@
 #include "..\FlowField.h"
 #include <SpriteBatchBuffer.h>
 #include <ds_imgui.h>
+#include "EventTypes.h"
 
 ds::vec2 convert_to_screen(int gx, int gy) {
 	return{ START_X + gx * 46, START_Y + gy * 46 };
@@ -27,13 +28,22 @@ Battleground::Battleground() : ds::Scene() {
 	_grid->load("TestLevel");
 	_startPoint = _grid->getStart();
 	_endPoint = _grid->getEnd();
-
+	_selectedTower = -1;
 	_flowField = new FlowField(_grid);
 	_flowField->build(_endPoint);
 
 	_pendingWalkers = { WalkerType::SIMPLE_CELL, 0, 0.0f, 0.0f };
 	_dbgTTL = 0.4f;
 	_dbgShowOverlay = true;
+	_dbgWalkerIndex = 0;
+
+	_definitions[0] = { ds::vec4(138, 276, 30, 30),  2, ds::Color(  0,192,  0,255),  80.0f };
+	_definitions[1] = { ds::vec4(138, 276, 30, 30),  3, ds::Color(  0,192,192,255),  90.0f };
+	_definitions[2] = { ds::vec4(138, 276, 30, 30),  4, ds::Color(192,  0,  0,255), 100.0f };
+	_definitions[3] = { ds::vec4( 46, 276, 30, 30),  2, ds::Color(0,192,  0,255),  80.0f };
+	_definitions[4] = { ds::vec4( 46, 276, 30, 30),  3, ds::Color(0,192,192,255),  90.0f };
+	_definitions[5] = { ds::vec4( 46, 276, 30, 30),  4, ds::Color(192,  0,  0,255), 100.0f };
+	_definitions[6] = { ds::vec4(184, 276, 42, 28), 20, ds::Color(192,  0,  0,255), 100.0f };
 }
 
 // ---------------------------------------------------------------
@@ -78,7 +88,10 @@ void Battleground::render(SpriteBatchBuffer* buffer) {
 	//
 	for (uint32_t i = 0; i < _walkers.numObjects;++i) {	
 		const Walker& w = _walkers.objects[i];
-		buffer->add(w.pos, ds::vec4(276, 0, 24, 24), ds::vec2(1, 1), w.rotation);
+		const WalkerDefinition& def = _definitions[w.definitionIndex];
+		// ds::vec4(276, 0, 24, 24)
+		// ds::vec4(0, 276, 26, 26)
+		buffer->add(w.pos, def.texture, ds::vec2(1, 1), w.rotation, def.color);
 		
 	}
 	//
@@ -93,21 +106,24 @@ void Battleground::render(SpriteBatchBuffer* buffer) {
 // ---------------------------------------------------------------
 // start walker
 // ---------------------------------------------------------------
-void Battleground::startWalker() {
+void Battleground::startWalker(int definitionIndex) {
+	const WalkerDefinition& def = _definitions[definitionIndex];
 	ID id = _walkers.add();
 	Walker& w = _walkers.get(id);
 	w.gridPos = _startPoint;
 	w.pos = ds::vec2(START_X + _startPoint.x * 46, START_Y + _startPoint.y * 46);
 	w.rotation = 0.0f;
-	w.velocity = ds::vec2(0.0f);
+	w.velocity = def.velocity;
+	w.definitionIndex = definitionIndex;
+	w.energy = def.energy;
 }
 
 // ---------------------------------------------------------------
 // start walkers
 // ---------------------------------------------------------------
-void Battleground::startWalkers(WalkerType::Enum type, int count, float ttl) {
+void Battleground::startWalkers(int definitionIndex, int count, float ttl) {
 	_pendingWalkers.timer = 0.0f;
-	_pendingWalkers.type = type;
+	_pendingWalkers.definitionIndex = definitionIndex;
 	_pendingWalkers.count = count;
 	_pendingWalkers.ttl = ttl;
 }
@@ -120,7 +136,7 @@ void Battleground::emittWalker(float dt) {
 		_pendingWalkers.timer += dt;
 		if (_pendingWalkers.timer >= _pendingWalkers.ttl) {
 			--_pendingWalkers.count;
-			startWalker();
+			startWalker(_pendingWalkers.definitionIndex);
 			_pendingWalkers.timer -= _pendingWalkers.ttl;
 		}
 	}
@@ -135,20 +151,27 @@ bool Battleground::isClose(const Tower& tower, const Walker& walker) const {
 }
 
 // ---------------------------------------------------------------
-// button clicked
-// ---------------------------------------------------------------
-void Battleground::buttonClicked(int index) {
-	if (index == 0) {
-		for (size_t i = 0; i < _towers.size(); ++i) {
-			startBullet(i, 1);
-		}
-	}
-}
-
-// ---------------------------------------------------------------
 // tick
 // ---------------------------------------------------------------
 void Battleground::update(float dt) {
+
+	if (_events->containsType(EventType::RIGHT_BUTTON_CLICKED)) {
+		ds::vec2 mp = ds::getMousePosition();
+		addTower(mp);
+	}
+	if (_events->containsType(EventType::LEFT_BUTTON_CLICKED)) {
+		ds::vec2 mp = ds::getMousePosition();
+		p2i gridPos;
+		_selectedTower = -1;
+		if (convert(mp.x, mp.y, &gridPos)) {
+			for (size_t i = 0; i < _towers.size(); ++i) {
+				const Tower& t = _towers[i];
+				if (gridPos.x == t.gx && gridPos.y == t.gy) {
+					_selectedTower = i;
+				}
+			}
+		}
+	}
 
 	emittWalker(dt);
 
@@ -200,11 +223,14 @@ void Battleground::startBullet(int towerIndex, int energy) {
 bool Battleground::checkWalkerCollision(const ds::vec2& pos, float radius) {
 	float sumRadius = radius + 12.0f;
 	for (uint32_t i = 0; i < _walkers.numObjects; ++i) {
-		const Walker& w = _walkers.objects[i];
+		Walker& w = _walkers.objects[i];
 		float diff = sqr_length(pos - w.pos);
 		if (diff < sumRadius * sumRadius) {
 			if (_walkers.contains(w.id)) {
-				_walkers.remove(w.id);
+				--w.energy;
+				if (w.energy <= 0) {
+					_walkers.remove(w.id);
+				}
 			}
 			return true;
 		}
@@ -243,7 +269,6 @@ void Battleground::rotateTowers() {
 				const Walker& w = _walkers.get(t.target);
 				if (!isClose(t, w)) {
 					t.target = INVALID_ID;
-					//t.timer = 0.0f;
 				}
 				else {
 					ds::vec2 dd = w.pos - t.position;
@@ -252,7 +277,6 @@ void Battleground::rotateTowers() {
 			}
 			else {
 				t.target = INVALID_ID;
-				//t.timer = t.bulletTTL;
 			}
 		}
 		if (t.target == INVALID_ID) {
@@ -260,7 +284,6 @@ void Battleground::rotateTowers() {
 				const Walker& w = _walkers.objects[i];
 				float diff = sqr_length(t.position - w.pos);
 				if (diff < t.radius * t.radius) {
-					//t.timer = t.bulletTTL;
 					ds::vec2 dd = w.pos - t.position;
 					t.direction = getAngle(ds::vec2(1, 0),normalize(dd));
 					t.target = w.id;
@@ -284,7 +307,7 @@ void Battleground::moveWalkers(float dt) {
 			if (sqr_length(diff) < 4.0f) {
 				convert(w.pos.x, w.pos.y, START_X, START_Y, &w.gridPos);
 			}
-			ds::vec2 v = normalize(ds::vec2(nextPos.x, nextPos.y) - w.pos) * 100.0f;
+			ds::vec2 v = normalize(ds::vec2(nextPos.x, nextPos.y) - w.pos) * w.velocity;
 			w.pos += v * dt;
 			w.rotation = getAngle(w.pos, ds::vec2(nextPos.x, nextPos.y));
 		}
@@ -331,8 +354,22 @@ void Battleground::showGUI() {
 	gui::begin("Walkers", 0);
 	gui::Checkbox("Show overlay", &_dbgShowOverlay);
 	gui::Input("TTL", &_dbgTTL);
+	gui::Input("Walker", &_dbgWalkerIndex);
 	if (gui::Button("Start")) {
-		startWalkers(WalkerType::SIMPLE_CELL , 8, _dbgTTL);
+		startWalkers(_dbgWalkerIndex , 8, _dbgTTL);
+	}
+	if (_selectedTower != -1) {
+		gui::begin("Tower", 0);
+		Tower& t = _towers[_selectedTower];
+		gui::Value("Index", _selectedTower);
+		gui::Value("Level", t.level);
+		if (gui::Button("Upgrade")) {
+			++t.level;
+			if (t.level > 3) {
+				t.level = 3;
+				// upgrade tower properly
+			}
+		}
 	}
 	gui::end();
 }

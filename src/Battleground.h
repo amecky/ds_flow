@@ -16,8 +16,15 @@ struct WalkerType {
 	};
 };
 
+struct WalkerDefinition {
+	ds::vec4 texture;
+	int energy;
+	ds::Color color;
+	float velocity;
+};
+
 struct PendingWalkers {	
-	WalkerType::Enum type;
+	int definitionIndex;
 	int count;
 	float timer;
 	float ttl;
@@ -26,10 +33,12 @@ struct PendingWalkers {
 struct Walker {
 	ID id;
 	p2i gridPos;
-	ds::vec2 velocity;
+	float velocity;
 	ds::vec2 pos;
 	float rotation;
 	WalkerType::Enum type;
+	int definitionIndex;
+	int energy;
 };
 
 struct Bullet {
@@ -70,11 +79,10 @@ public:
 	Battleground();
 	~Battleground();
 	void render(SpriteBatchBuffer* buffer);
-	void startWalker();
-	void startWalkers(WalkerType::Enum type, int count, float ttl);
+	void startWalker(int definitionIndex);
+	void startWalkers(int definitionIndex, int count, float ttl);
 	void addTower(ds::vec2& screenPos);
 	void update(float dt);
-	void buttonClicked(int index);
 	void showGUI();
 private:	
 	void emittWalker(float dt);
@@ -92,8 +100,11 @@ private:
 	p2i _startPoint;
 	p2i _endPoint;
 	Towers _towers;
+	int _selectedTower;
 	PendingWalkers _pendingWalkers;
+	WalkerDefinition _definitions[20];
 	// debug
 	float _dbgTTL;
 	bool _dbgShowOverlay;
+	int _dbgWalkerIndex;
 };

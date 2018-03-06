@@ -6,6 +6,7 @@
 #include "Editor.h"
 #include "Battleground.h"
 #include <ds_imgui.h>
+#include "EventTypes.h"
 
 ds::BaseApp *app = new FlowApplication();
 // ---------------------------------------------------------------
@@ -39,21 +40,6 @@ static const ds::vec2 FONT_DEF[] = {
 	ds::vec2(505,22), // Y
 	ds::vec2(527,19)  // Z
 };
-
-
-FlowApplication::FlowApplication() : ds::BaseApp() {
-	_settings.screenWidth = 1280;
-	_settings.screenHeight = 720;
-	_settings.windowTitle = "Flow";
-	_settings.useIMGUI = true;
-	_settings.clearColor = ds::Color(16, 16, 16, 255);
-}
-
-
-FlowApplication::~FlowApplication() {
-	delete _editor;
-	delete _battleGround;
-}
 
 // ---------------------------------------------------------------
 // build the font info needed by the game ui
@@ -92,13 +78,29 @@ RID loadImage(const char* name) {
 }
 
 
+
+FlowApplication::FlowApplication() : ds::BaseApp() {
+	_settings.screenWidth = 1280;
+	_settings.screenHeight = 720;
+	_settings.windowTitle = "Flow";
+	_settings.useIMGUI = true;
+	_settings.clearColor = ds::Color(16, 16, 16, 255);
+	_leftButton = { false, false };
+	_rightButton = { false, false };
+}
+
+
+FlowApplication::~FlowApplication() {
+	delete _editor;
+	delete _battleGround;
+}
+
 // ---------------------------------------------------------------
 // initialize
 // ---------------------------------------------------------------
 void FlowApplication::initialize() {
 	//
 	// load the one and only texture
-	// move to colorzone->init
 	RID textureID = loadImage("TextureArray.png");
 
 	SpriteBatchBufferInfo sbbInfo = { 2048, textureID , ds::TextureFilters::LINEAR };
@@ -117,16 +119,50 @@ void FlowApplication::handleEvents(ds::EventStream* events) {
 		for (uint32_t i = 0; i < events->num(); ++i) {
 			int type = events->getType(i);
 			if (type == 100) {
-				popScene();
+				//popScene();
 				//pushScene(_mainGameScene);
 			}
 			else if (type == 101) {
-				popScene();
+				//popScene();
 				//pushScene(_mapSelectionScene);
 			}
 			else if (type == 102) {
 				stopGame();
 			}
 		}
+	}
+}
+
+// ---------------------------------------------------------------
+// handle buttons
+// ---------------------------------------------------------------
+void FlowApplication::handleButton(int index, ButtonState* state) {
+	if (ds::isMouseButtonPressed(index)) {
+		state->pressed = true;
+	}
+	else if (state->pressed) {
+		state->pressed = false;
+		if (!state->clicked) {
+			state->clicked = true;
+		}
+		else {
+			state->clicked = false;
+		}
+	}
+}
+
+// ---------------------------------------------------------------
+// update
+// ---------------------------------------------------------------
+void FlowApplication::update(float dt) {
+	handleButton(0, &_leftButton);
+	if (_leftButton.clicked) {
+		_events->add(EventType::LEFT_BUTTON_CLICKED);
+		_leftButton.clicked = false;
+	}
+	handleButton(1, &_rightButton);
+	if (_rightButton.clicked) {
+		_events->add(EventType::RIGHT_BUTTON_CLICKED);
+		_rightButton.clicked = false;
 	}
 }

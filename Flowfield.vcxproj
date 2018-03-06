@@ -150,6 +150,7 @@
     <ClInclude Include="FlowField.h" />
     <ClInclude Include="src\Battleground.h" />
     <ClInclude Include="src\Editor.h" />
+    <ClInclude Include="src\EventTypes.h" />
     <ClInclude Include="src\FlowApplication.h" />
     <ClInclude Include="src\Grid.h" />
     <ClInclude Include="src\lib\DataArray.h" />
