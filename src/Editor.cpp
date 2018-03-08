@@ -1,5 +1,6 @@
 #include "Editor.h"
 #include <SpriteBatchBuffer.h>
+#include "EventTypes.h"
 
 Editor::Editor() : ds::Scene() {
 	_grid = new Grid(GRID_SIZE_X, GRID_SIZE_Y);
@@ -52,6 +53,21 @@ void Editor::update(float dt) {
 	else {
 		_gridPos = p2i(-1, -1);
 	}
+
+	if (_gridPos.x != -1 && _gridPos.y != -1) {
+		if (_events->containsType(EventType::RIGHT_BUTTON_CLICKED)) {
+			_grid->set(_gridPos, _selectedType);
+		}
+		if (_events->containsType(EventType::LEFT_BUTTON_CLICKED)) {
+			if (_grid->get(_gridPos) == 0) {
+				_grid->set(_gridPos, 1);
+			}
+			else {
+				_grid->set(_gridPos, 0);
+			}
+		}
+	}
+
 }
 
 // ---------------------------------------------------------------
