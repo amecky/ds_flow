@@ -135,6 +135,7 @@
     <ClCompile Include="src\Editor.cpp" />
     <ClCompile Include="src\FlowApplication.cpp" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\utils\CSVFile.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="APath.h" />
@@ -154,6 +155,7 @@
     <ClInclude Include="src\FlowApplication.h" />
     <ClInclude Include="src\Grid.h" />
     <ClInclude Include="src\lib\DataArray.h" />
+    <ClInclude Include="src\utils\CSVFile.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

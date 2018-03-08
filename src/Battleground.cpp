@@ -3,6 +3,7 @@
 #include <SpriteBatchBuffer.h>
 #include <ds_imgui.h>
 #include "EventTypes.h"
+#include "utils\CSVFile.h"
 
 ds::vec2 convert_to_screen(int gx, int gy) {
 	return{ START_X + gx * 46, START_Y + gy * 46 };
@@ -37,6 +38,27 @@ Battleground::Battleground() : ds::Scene() {
 	_dbgShowOverlay = true;
 	_dbgWalkerIndex = 0;
 
+	CSVFile csvFile;
+	if (csvFile.load("walker_definitions.csv", "resources")) {
+		size_t num = csvFile.size();
+		for (size_t i = 0; i < num; ++i) {
+			const TextLine& tl = csvFile.get(i);
+			WalkerDefinition& def = _definitions[i];
+			def.texture.x = tl.get_int(0);
+			def.texture.y = tl.get_int(1);
+			def.texture.z = tl.get_int(2);
+			def.texture.w = tl.get_int(3);
+			def.energy = tl.get_int(4);
+			int colors[4];
+			colors[0] = tl.get_int(5);
+			colors[1] = tl.get_int(6);
+			colors[2] = tl.get_int(7);
+			colors[3] = tl.get_int(8);
+			def.color = ds::Color(colors[0], colors[1], colors[2], colors[3]);
+			def.velocity = tl.get_float(9);
+		}
+	}
+	/*
 	_definitions[0] = { ds::vec4(138, 276, 30, 30),  2, ds::Color(  0,192,  0,255),  80.0f };
 	_definitions[1] = { ds::vec4(138, 276, 30, 30),  3, ds::Color(  0,192,192,255),  90.0f };
 	_definitions[2] = { ds::vec4(138, 276, 30, 30),  4, ds::Color(192,  0,  0,255), 100.0f };
@@ -44,6 +66,7 @@ Battleground::Battleground() : ds::Scene() {
 	_definitions[4] = { ds::vec4( 46, 276, 30, 30),  3, ds::Color(0,192,192,255),  90.0f };
 	_definitions[5] = { ds::vec4( 46, 276, 30, 30),  4, ds::Color(192,  0,  0,255), 100.0f };
 	_definitions[6] = { ds::vec4(184, 276, 42, 28), 20, ds::Color(192,  0,  0,255), 100.0f };
+	*/
 }
 
 // ---------------------------------------------------------------
@@ -64,7 +87,7 @@ void Battleground::render(SpriteBatchBuffer* buffer) {
 	for (int y = 0; y < _grid->height; ++y) {
 		for (int x = 0; x < _grid->width; ++x) {
 			ds::vec2 p = ds::vec2(START_X + x * 46, START_Y + 46 * y);
-			int type = _grid->items[x + y * _grid->width];
+			int type = _grid->get(x,y);
 			buffer->add(p, GRID_TEXTURES[type]);
 			if (_dbgShowOverlay) {
 				// draw direction
@@ -89,8 +112,6 @@ void Battleground::render(SpriteBatchBuffer* buffer) {
 	for (uint32_t i = 0; i < _walkers.numObjects;++i) {	
 		const Walker& w = _walkers.objects[i];
 		const WalkerDefinition& def = _definitions[w.definitionIndex];
-		// ds::vec4(276, 0, 24, 24)
-		// ds::vec4(0, 276, 26, 26)
 		buffer->add(w.pos, def.texture, ds::vec2(1, 1), w.rotation, def.color);
 		
 	}
