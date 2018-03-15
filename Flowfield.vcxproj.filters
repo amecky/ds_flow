@@ -52,6 +52,7 @@
     <ClInclude Include="src\utils\CSVFile.h">
       <Filter>utils</Filter>
     </ClInclude>
+    <ClInclude Include="src\ApplicationContext.h" />
   </ItemGroup>
   <ItemGroup>
     <Filter Include="lib">

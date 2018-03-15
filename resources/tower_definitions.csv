@@ -1,0 +1,4 @@
+# texture.left, texture.top, texture.width, texture.height, radius, energy, bulletTTL
+46, 92, 46, 46,  100, 10, 0.3
+92, 92, 46, 46,  100, 20, 0.2
+138, 92, 46, 46,  100, 30, 0.2

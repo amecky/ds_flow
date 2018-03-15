@@ -4,65 +4,10 @@
 #include <ds_sprite_app.h>
 #include "Grid.h"
 #include "lib\DataArray.h"
+#include "ApplicationContext.h"
 
 class FlowField;
 class SpriteBatchBuffer;
-
-struct WalkerType {
-
-	enum Enum {
-		SIMPLE_CELL,
-		FAST_CELL
-	};
-};
-
-struct WalkerDefinition {
-	ds::vec4 texture;
-	int energy;
-	ds::Color color;
-	float velocity;
-};
-
-struct PendingWalkers {	
-	int definitionIndex;
-	int count;
-	float timer;
-	float ttl;
-};
-
-struct Walker {
-	ID id;
-	p2i gridPos;
-	float velocity;
-	ds::vec2 pos;
-	float rotation;
-	WalkerType::Enum type;
-	int definitionIndex;
-	int energy;
-};
-
-struct Bullet {
-	ds::vec2 pos;
-	float radius;
-	ds::vec2 velocity;
-	float timer;
-	float ttl;
-	int energy;
-};
-
-struct Tower {
-	int type;
-	int gx;
-	int gy;
-	ds::vec2 position;
-	float radius;
-	int energy;
-	float timer;
-	float bulletTTL;
-	float direction;
-	ID target;
-	int level;
-};
 
 struct Level {
 	const char* name;
@@ -81,10 +26,12 @@ public:
 	void render(SpriteBatchBuffer* buffer);
 	void startWalker(int definitionIndex);
 	void startWalkers(int definitionIndex, int count, float ttl);
-	void addTower(ds::vec2& screenPos);
+	void addTower(ds::vec2& screenPos,int defIndex);
 	void update(float dt);
 	void showGUI();
 private:
+	void startAnimation(int index);
+	void readTowerDefinitions();
 	void buildPath();
 	void emittWalker(float dt);
 	void moveWalkers(float dt);
@@ -95,7 +42,7 @@ private:
 	bool checkWalkerCollision(const ds::vec2& pos, float radius, int energy);
 	void fireBullets(float dt);
 	ds::DataArray<Walker> _walkers;
-	std::vector<Bullet> _bullets;
+	ds::DataArray<Bullet> _bullets;
 	Grid* _grid;
 	FlowField* _flowField;
 	p2i _startPoint;
@@ -104,10 +51,12 @@ private:
 	int _selectedTower;
 	PendingWalkers _pendingWalkers;
 	WalkerDefinition _definitions[20];
+	TowerDefinition _towerDefinitions[10];
 	std::vector<p2i> _path;
 	// debug
 	float _dbgTTL;
 	bool _dbgShowOverlay;
 	int _dbgWalkerIndex;
 	bool _dbgShowPath;
+	int _dbgTowerType;
 };

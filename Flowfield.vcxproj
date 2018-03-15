@@ -149,6 +149,7 @@
     <ClInclude Include="ext\SpriteBatchBuffer.h" />
     <ClInclude Include="ext\stb_image.h" />
     <ClInclude Include="FlowField.h" />
+    <ClInclude Include="src\ApplicationContext.h" />
     <ClInclude Include="src\Battleground.h" />
     <ClInclude Include="src\Editor.h" />
     <ClInclude Include="src\EventTypes.h" />
