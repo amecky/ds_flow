@@ -32,10 +32,11 @@ Battleground::Battleground() : ds::Scene() {
 	_selectedTower = -1;
 	_flowField = new FlowField(_grid);
 	_flowField->build(_endPoint);
-
+	buildPath();
 	_pendingWalkers = { WalkerType::SIMPLE_CELL, 0, 0.0f, 0.0f };
 	_dbgTTL = 0.4f;
-	_dbgShowOverlay = true;
+	_dbgShowOverlay = false;
+	_dbgShowPath = true;
 	_dbgWalkerIndex = 0;
 
 	CSVFile csvFile;
@@ -96,6 +97,15 @@ void Battleground::render(SpriteBatchBuffer* buffer) {
 					buffer->add(p, ds::vec4(d * 46, 138, 46, 46));
 				}
 			}
+		}
+	}
+
+	for (size_t i = 0; i < _path.size(); ++i) {
+		p2i p = _path[i];
+		int d = _flowField->get(p.x, p.y);
+		if (d >= 0 && d < 9) {
+			ds::vec2 gp = ds::vec2(START_X + p.x * 46, START_Y + 46 * p.y);
+			buffer->add(gp, ds::vec4(d * 46, 138, 46, 46));
 		}
 	}
 	//
@@ -214,7 +224,7 @@ void Battleground::fireBullets(float dt) {
 		t.timer += dt;
 		if (t.target != INVALID_ID) {			
 			if (t.timer >= t.bulletTTL) {
-				startBullet(i,1);
+				startBullet(i,t.energy);
 				t.timer = 0.0f;
 			}
 		}
@@ -241,14 +251,14 @@ void Battleground::startBullet(int towerIndex, int energy) {
 // ---------------------------------------------------------------
 // check walker collision
 // ---------------------------------------------------------------
-bool Battleground::checkWalkerCollision(const ds::vec2& pos, float radius) {
+bool Battleground::checkWalkerCollision(const ds::vec2& pos, float radius, int energy) {
 	float sumRadius = radius + 12.0f;
 	for (uint32_t i = 0; i < _walkers.numObjects; ++i) {
 		Walker& w = _walkers.objects[i];
 		float diff = sqr_length(pos - w.pos);
 		if (diff < sumRadius * sumRadius) {
 			if (_walkers.contains(w.id)) {
-				--w.energy;
+				w.energy -= energy;
 				if (w.energy <= 0) {
 					_walkers.remove(w.id);
 				}
@@ -266,7 +276,7 @@ void Battleground::moveBullets(float dt) {
 	std::vector<Bullet>::iterator it = _bullets.begin();
 	while (it != _bullets.end()) {
 		it->pos += it->velocity * dt;
-		if (checkWalkerCollision(it->pos, 6.0f)) {
+		if (checkWalkerCollision(it->pos, 6.0f, it->energy)) {
 			it = _bullets.erase(it);
 		}
 		else if (it->pos.x < 0.0f || it->pos.x > 1020.0f || it->pos.y < 0.0f || it->pos.y > 760.0f) {
@@ -315,6 +325,15 @@ void Battleground::rotateTowers() {
 	}
 }
 
+void Battleground::buildPath() {
+	_path.clear();
+	p2i current = _startPoint;
+	while (_flowField->hasNext(current)) {
+		_path.push_back(current);
+		current = _flowField->next(current);
+	}
+}
+
 // ---------------------------------------------------------------
 // move walkers
 // ---------------------------------------------------------------
@@ -347,15 +366,16 @@ void Battleground::addTower(ds::vec2& screenPos) {
 		if (_grid->get(gridPos) == 0) {
 			_grid->set(gridPos.x, gridPos.y, 1);
 			_flowField->build(_endPoint);
+			buildPath();
 			Tower t;
 			t.type = 0;
 			t.gx = gridPos.x;
 			t.gy = gridPos.y;
 			t.position = convert_to_screen(t.gx, t.gy);
 			t.radius = 100.0f;
-			t.energy = 1;
+			t.energy = 10;
 			t.timer = 0.0f;
-			t.bulletTTL = 2.0f;
+			t.bulletTTL = 0.3f;
 			t.direction = 0.0f;
 			t.target = INVALID_ID;
 			t.level = 1;
@@ -374,8 +394,10 @@ void Battleground::showGUI() {
 	gui::start(&dp, 300);
 	gui::begin("Walkers", 0);
 	gui::Checkbox("Show overlay", &_dbgShowOverlay);
+	gui::Checkbox("Show path", &_dbgShowPath);
 	gui::Input("TTL", &_dbgTTL);
 	gui::Input("Walker", &_dbgWalkerIndex);
+	gui::Value("Bullets", (int)_bullets.size());
 	if (gui::Button("Start")) {
 		startWalkers(_dbgWalkerIndex , 8, _dbgTTL);
 	}
