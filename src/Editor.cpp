@@ -2,7 +2,7 @@
 #include <SpriteBatchBuffer.h>
 #include "EventTypes.h"
 
-Editor::Editor() : ds::Scene() {
+Editor::Editor(SpriteBatchBuffer* buffer) : ds::SpriteScene(buffer) {
 	_grid = new Grid(GRID_SIZE_X, GRID_SIZE_Y);
 	_startPoint = p2i(1, 1);
 	_endPoint = p2i(18, 12);
@@ -32,16 +32,16 @@ void Editor::buttonClicked(int index) {
 	}
 }
 
-void Editor::render(SpriteBatchBuffer* buffer) {
+void Editor::render() {
 	for (int y = 0; y < _grid->height; ++y) {
 		for (int x = 0; x < _grid->width; ++x) {
 			int type = _grid->get(x, y);
 			ds::vec2 p = ds::vec2(START_X + x * 46, START_Y + 46 * y);
-			buffer->add(p, GRID_TEXTURES[type]);
+			_buffer->add(p, GRID_TEXTURES[type]);
 		}
 	}
 
-	buffer->add(ds::vec2(640,650), GRID_TEXTURES[_selectedType]);
+	_buffer->add(ds::vec2(640,650), GRID_TEXTURES[_selectedType]);
 }
 
 void Editor::update(float dt) {

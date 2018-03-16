@@ -4,10 +4,15 @@
 #include <vector>
 #include <stdint.h>
 
+//#define BASE_APP_IMPLEMENTATION
+
 class SpriteBatchBuffer;
 
 namespace ds {
 
+	// ----------------------------------------------------
+	// Application settings
+	// ----------------------------------------------------
 	struct ApplicationSettings {
 		bool useIMGUI;
 		bool useGPUProfiling;
@@ -15,8 +20,12 @@ namespace ds {
 		int screenHeight;
 		const char* windowTitle;
 		ds::Color clearColor;
+		char guiToggleKey;
 	};
 
+	// ----------------------------------------------------
+	// event stream
+	// ----------------------------------------------------
 	class EventStream {
 
 		struct EventHeader {
@@ -45,14 +54,19 @@ namespace ds {
 		uint32_t _index;
 	};
 
+	// ----------------------------------------------------
+	// Scene
+	// ----------------------------------------------------
 	class Scene {
 
 	public:
 		Scene() : _active(false), _initialized(false) {}
 		virtual ~Scene() {}
-		virtual void render(SpriteBatchBuffer* buffer) {}
+		virtual void beforeRendering() {}
+		virtual void render() {}
+		virtual void afterRendering() {}
 		virtual void update(float dt) {}
-		void prepare(ds::EventStream* events) {
+		virtual void prepare(ds::EventStream* events) {
 			if (!_initialized) {
 				_events = events;
 				_initialized = true;
@@ -74,13 +88,67 @@ namespace ds {
 		bool isActive() const {
 			return _active;
 		}
+		virtual void OnButtonClicked(int index) {}
 	protected:
+		RID loadImageFromFile(const char* name);
 		ds::EventStream* _events;
-	private:
 		bool _active;
 		bool _initialized;
 	};
 
+	// ----------------------------------------------------
+	// SpriteScene
+	// ----------------------------------------------------
+	class SpriteScene : public Scene {
+
+	public:
+		SpriteScene(SpriteBatchBuffer* buffer) : Scene() , _buffer(buffer) {}
+		virtual ~SpriteScene() {}
+		void beforeRendering();
+		void afterRendering();
+	protected:
+		SpriteBatchBuffer* _buffer;
+	};
+
+	// ----------------------------------------------------
+	// BaseScene
+	// ----------------------------------------------------
+	class BaseScene : public Scene {
+
+	public:
+		BaseScene() : Scene() {}
+		virtual ~BaseScene() {}
+		virtual void prepare(ds::EventStream* events) {
+			if (!_initialized) {
+				_events = events;
+				_initialized = true;
+				_camera = ds::buildPerspectiveCamera(ds::vec3(0.0f, 3.0f, -6.0f));
+
+				ds::ViewportInfo vpInfo = { ds::getScreenWidth(), ds::getScreenHeight(), 0.0f, 1.0f };
+				_viewPort = ds::createViewport(vpInfo);
+
+				ds::RenderPassInfo rpInfo = { &_camera, _viewPort, ds::DepthBufferState::ENABLED, 0, 0 };
+				_basicPass = ds::createRenderPass(rpInfo);
+
+				ds::BlendStateInfo blendInfo = { ds::BlendStates::SRC_ALPHA, ds::BlendStates::SRC_ALPHA, ds::BlendStates::INV_SRC_ALPHA, ds::BlendStates::INV_SRC_ALPHA, true };
+				_blendStateID = ds::createBlendState(blendInfo);
+			}
+		}
+	protected:
+		RID _viewPort;
+		RID _blendStateID;
+		RID _basicPass;
+		ds::Camera _camera;
+	};
+
+	struct ButtonState {
+		bool pressed;
+		bool clicked;
+	};
+
+	// ----------------------------------------------------
+	// BaseApp
+	// ----------------------------------------------------
 	class BaseApp {
 
 		typedef std::vector<Scene*> Scenes;
@@ -102,32 +170,33 @@ namespace ds {
 			scene->prepare(_events);
 			scene->initialize();
 			scene->onActivation();
+			scene->setActive(true);
 			_scenes.push_back(scene);
 		}
 		void popScene() {
 			if (!_scenes.empty()) {
 				Scene* scene = _scenes[_scenes.size() - 1];
 				scene->onDeactivation();
+				scene->setActive(false);
 			}
 			_scenes.pop_back();
-		}
-		void setSpriteBatchBuffer(SpriteBatchBuffer* buffer) {
-			_buffer = buffer;
 		}
 		void initializeSettings(const char* settingsFileName);
 		void loadSettings();
 		bool isRunning() const {
 			return _running;
-		}
+		}		
+		SpriteBatchBuffer* createSpriteBatchBuffer(RID textureID, int maxSprites);
 	protected:
 		void stopGame() {
 			_running = false;
 		}
-		RID loadImageFromResource(LPCTSTR name, LPCTSTR type);
+		RID loadImageFromResource(LPCTSTR name, LPCTSTR type);		
 		ApplicationSettings _settings;
 		ds::EventStream* _events;
-		SpriteBatchBuffer* _buffer;
 	private:
+		void handleButtons();
+		SpriteBatchBuffer* _sprites;
 		Scenes _scenes;
 		float _loadTimer;
 		const char* _settingsFileName;
@@ -135,6 +204,7 @@ namespace ds {
 		bool _guiKeyPressed;
 		bool _guiActive;
 		bool _running;
+		ButtonState _buttonStates[2];
 	};
 
 
@@ -144,6 +214,10 @@ namespace ds {
 extern ds::BaseApp* app;
 
 #ifdef BASE_APP_IMPLEMENTATION
+//#include <SpriteBatchBuffer.h>
+//#include <stb_image.h>
+//#include <ds_tweakable.h>
+//#include <ds_imgui.h>
 
 namespace ds {
 
@@ -202,6 +276,8 @@ namespace ds {
 		return ret;
 	}
 
+	
+
 	// -------------------------------------------------------
 	// BaseApp
 	// -------------------------------------------------------
@@ -210,14 +286,18 @@ namespace ds {
 		_settings.useGPUProfiling = false;
 		_settings.screenWidth = 1280;
 		_settings.screenHeight = 720;
-		_settings.windowTitle = "ColorZone";
-		_settings.clearColor = ds::Color(0.9f, 0.9f, 0.9f, 1.0f);
+		_settings.windowTitle = "BaseApp";
+		_settings.clearColor = ds::Color(0.1f, 0.1f, 0.1f, 1.0f);
+		_settings.guiToggleKey = 'D';
 		_events = new ds::EventStream;
 		_loadTimer = 0.0f;
 		_useTweakables = false;
 		_guiKeyPressed = false;
 		_guiActive = true;
 		_running = true;
+		_sprites = 0;
+		_buttonStates[0] = { false, false };
+		_buttonStates[1] = { false, false };
 	}
 
 	BaseApp::~BaseApp() {
@@ -227,13 +307,37 @@ namespace ds {
 		if (_settings.useIMGUI) {
 			gui::shutdown();
 		}
+		if (_sprites != 0) {
+			delete _sprites;
+		}
 		delete _events;
+	}
+
+	// ---------------------------------------------------------------
+	// handle buttons
+	// ---------------------------------------------------------------
+	void BaseApp::handleButtons() {
+		for (int i = 0; i < 2; ++i) {
+			if (ds::isMouseButtonPressed(i)) {
+				_buttonStates[i].pressed = true;
+			}
+			else if (_buttonStates[i].pressed) {
+				_buttonStates[i].pressed = false;
+				if (!_buttonStates[i].clicked) {
+					_buttonStates[i].clicked = true;
+				}
+				else {
+					_buttonStates[i].clicked = false;
+				}
+			}
+		}
 	}
 
 	// -------------------------------------------------------
 	// init
 	// -------------------------------------------------------
 	void BaseApp::init() {
+		SetThreadAffinityMask(GetCurrentThread(), 1);
 		//
 		// prepare application
 		//
@@ -255,10 +359,17 @@ namespace ds {
 			gui::init();
 		}
 
-		ds::log(LogLevel::LL_DEBUG, "=> Press 'D' to toggle GUI");
+		ds::log(LogLevel::LL_DEBUG, "=> Press '%c' to toggle GUI", _settings.guiToggleKey);
 		initialize();
 	}
 
+	SpriteBatchBuffer* BaseApp::createSpriteBatchBuffer(RID textureID, int maxSprites) {
+		SpriteBatchBufferInfo sbbInfo = { 2048, textureID , ds::TextureFilters::LINEAR };
+		_sprites = new SpriteBatchBuffer(sbbInfo);
+		return _sprites;
+	}
+
+	
 	// -------------------------------------------------------
 	// intialize settings
 	// -------------------------------------------------------
@@ -305,7 +416,7 @@ namespace ds {
 #endif
 		}
 
-		if (ds::isKeyPressed('D')) {
+		if (ds::isKeyPressed(_settings.guiToggleKey)) {
 			if (!_guiKeyPressed) {
 				_guiActive = !_guiActive;
 				_guiKeyPressed = true;
@@ -315,9 +426,22 @@ namespace ds {
 			_guiKeyPressed = false;
 		}
 
-		_events->reset();
+		handleButtons();
 
-		_buffer->begin();
+		for (int i = 0; i < 2; ++i) {
+			if (_buttonStates[i].clicked) {
+				ScenesIterator it = _scenes.begin();
+				while (it != _scenes.end()) {
+					if ((*it)->isActive()) {
+						(*it)->OnButtonClicked(i);
+					}
+					++it;
+				}
+				_buttonStates[i].clicked = false;
+			}
+		}
+
+		_events->reset();
 
 		update(dt);
 
@@ -330,10 +454,11 @@ namespace ds {
 		}
 		it = _scenes.begin();
 		while (it != _scenes.end()) {
-			(*it)->render(_buffer);
+			(*it)->beforeRendering();
+			(*it)->render();
+			(*it)->afterRendering();
 			++it;
 		}
-		_buffer->flush();
 
 		if (_settings.useIMGUI && _guiActive) {
 			it = _scenes.begin();
@@ -344,6 +469,23 @@ namespace ds {
 		}
 		
 		handleEvents(_events);
+	}
+
+	RID Scene::loadImageFromFile(const char* name) {
+		int x, y, n;
+		unsigned char *data = stbi_load(name, &x, &y, &n, 4);
+		ds::TextureInfo info = { x,y,n,data,ds::TextureFormat::R8G8B8A8_UNORM , ds::BindFlag::BF_SHADER_RESOURCE };
+		RID textureID = ds::createTexture(info, name);
+		stbi_image_free(data);
+		return textureID;
+	}
+
+	void SpriteScene::beforeRendering() {
+		_buffer->begin();
+	}
+
+	void SpriteScene::afterRendering() {
+		_buffer->flush();
 	}
 
 	// -------------------------------------------------------

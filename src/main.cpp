@@ -13,7 +13,7 @@
 #define DS_IMGUI_IMPLEMENTATION
 #include <ds_imgui.h>
 #define BASE_APP_IMPLEMENTATION
-#include <ds_sprite_app.h>
+#include <ds_base_app.h>
 
 extern ds::BaseApp* app;
 

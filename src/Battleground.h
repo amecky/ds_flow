@@ -1,7 +1,7 @@
 #pragma once
 #include <diesel.h>
 #include <vector>
-#include <ds_sprite_app.h>
+#include <ds_base_app.h>
 #include "Grid.h"
 #include "lib\DataArray.h"
 #include "ApplicationContext.h"
@@ -18,12 +18,12 @@ struct Level {
 
 typedef std::vector<Tower> Towers;
 
-class Battleground : public ds::Scene {
+class Battleground : public ds::SpriteScene {
 
 public:
-	Battleground();
+	Battleground(SpriteBatchBuffer* buffer);
 	~Battleground();
-	void render(SpriteBatchBuffer* buffer);
+	void render();
 	void startWalker(int definitionIndex);
 	void startWalkers(int definitionIndex, int count, float ttl);
 	void addTower(ds::vec2& screenPos,int defIndex);

@@ -1,15 +1,15 @@
 #pragma once
 #include "Grid.h"
-#include <ds_sprite_app.h>
+#include <ds_base_app.h>
 
 class SpriteBatchBuffer;
 
-class Editor : public ds::Scene {
+class Editor : public ds::SpriteScene {
 
 public:
-	Editor();
+	Editor(SpriteBatchBuffer* buffer);
 	~Editor();
-	void render(SpriteBatchBuffer* buffer);
+	void render();
 	void buttonClicked(int index);
 	void showGUI();
 	void update(float dt);

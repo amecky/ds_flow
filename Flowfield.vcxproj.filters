@@ -44,15 +44,15 @@
     </ClInclude>
     <ClInclude Include="src\Editor.h" />
     <ClInclude Include="src\Grid.h" />
-    <ClInclude Include="ext\ds_sprite_app.h">
-      <Filter>ext</Filter>
-    </ClInclude>
     <ClInclude Include="src\FlowApplication.h" />
     <ClInclude Include="src\EventTypes.h" />
     <ClInclude Include="src\utils\CSVFile.h">
       <Filter>utils</Filter>
     </ClInclude>
     <ClInclude Include="src\ApplicationContext.h" />
+    <ClInclude Include="ext\ds_base_app.h">
+      <Filter>ext</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <Filter Include="lib">

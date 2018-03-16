@@ -22,7 +22,7 @@ float getAngle(const ds::vec2& u, const ds::vec2& v) {
 // ---------------------------------------------------------------
 // ctor
 // ---------------------------------------------------------------
-Battleground::Battleground() : ds::Scene() {
+Battleground::Battleground(SpriteBatchBuffer* buffer) : ds::SpriteScene(buffer) {
 	_grid = new Grid(GRID_SIZE_X, GRID_SIZE_Y);
 	_startPoint = p2i(0, 0);
 	_endPoint = p2i(0, 0);
@@ -91,7 +91,7 @@ void Battleground::readTowerDefinitions() {
 // ---------------------------------------------------------------
 // render
 // ---------------------------------------------------------------
-void Battleground::render(SpriteBatchBuffer* buffer) {
+void Battleground::render() {
 	//
 	// draw grid
 	//
@@ -99,12 +99,12 @@ void Battleground::render(SpriteBatchBuffer* buffer) {
 		for (int x = 0; x < _grid->width; ++x) {
 			ds::vec2 p = ds::vec2(START_X + x * 46, START_Y + 46 * y);
 			int type = _grid->get(x,y);
-			buffer->add(p, GRID_TEXTURES[type]);
+			_buffer->add(p, GRID_TEXTURES[type]);
 			if (_dbgShowOverlay) {
 				// draw direction
 				int d = _flowField->get(x, y);
 				if (d >= 0 && d < 9) {
-					buffer->add(p, ds::vec4(d * 46, 138, 46, 46));
+					_buffer->add(p, ds::vec4(d * 46, 138, 46, 46));
 				}
 			}
 		}
@@ -115,7 +115,7 @@ void Battleground::render(SpriteBatchBuffer* buffer) {
 		int d = _flowField->get(p.x, p.y);
 		if (d >= 0 && d < 9) {
 			ds::vec2 gp = ds::vec2(START_X + p.x * 46, START_Y + 46 * p.y);
-			buffer->add(gp, ds::vec4(d * 46, 138, 46, 46));
+			_buffer->add(gp, ds::vec4(d * 46, 138, 46, 46));
 		}
 	}
 	//
@@ -123,8 +123,8 @@ void Battleground::render(SpriteBatchBuffer* buffer) {
 	//
 	for (size_t i = 0; i < _towers.size(); ++i) {
 		const Tower& t = _towers[i];
-		buffer->add(t.position, ds::vec4(138 + t.level * 46, 46, 46, 46));
-		buffer->add(t.position, t.texture, ds::vec2(1.0f), t.direction);
+		_buffer->add(t.position, ds::vec4(138 + t.level * 46, 46, 46, 46));
+		_buffer->add(t.position, t.texture, ds::vec2(1.0f), t.direction);
 	}
 	//
 	// draw walkers
@@ -132,7 +132,7 @@ void Battleground::render(SpriteBatchBuffer* buffer) {
 	for (uint32_t i = 0; i < _walkers.numObjects;++i) {	
 		const Walker& w = _walkers.objects[i];
 		const WalkerDefinition& def = _definitions[w.definitionIndex];
-		buffer->add(w.pos, def.texture, ds::vec2(1, 1), w.rotation, def.color);
+		_buffer->add(w.pos, def.texture, ds::vec2(1, 1), w.rotation, def.color);
 		
 	}
 	//
@@ -140,7 +140,7 @@ void Battleground::render(SpriteBatchBuffer* buffer) {
 	//
 	for (size_t i = 0; i < _bullets.numObjects; ++i) {
 		const Bullet& b = _bullets.objects[i];
-		buffer->add(b.pos, ds::vec4(0, 60, 12, 12));
+		_buffer->add(b.pos, ds::vec4(0, 60, 12, 12));
 	}	
 }
 

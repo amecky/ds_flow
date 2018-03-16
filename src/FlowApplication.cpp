@@ -103,11 +103,10 @@ void FlowApplication::initialize() {
 	// load the one and only texture
 	RID textureID = loadImage("TextureArray.png");
 
-	SpriteBatchBufferInfo sbbInfo = { 2048, textureID , ds::TextureFilters::LINEAR };
-	_buffer = new SpriteBatchBuffer(sbbInfo);
+	SpriteBatchBuffer* buffer = createSpriteBatchBuffer(textureID, 4096);
 	
-	_editor = new Editor();
-	_battleGround = new Battleground();
+	_editor = new Editor(buffer);
+	_battleGround = new Battleground(buffer);
 	pushScene(_battleGround);
 }
 

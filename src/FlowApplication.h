@@ -1,5 +1,5 @@
 #pragma once
-#include <ds_sprite_app.h>
+#include <ds_base_app.h>
 
 class Editor;
 class Battleground;
